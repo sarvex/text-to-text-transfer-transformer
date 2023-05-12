@@ -132,7 +132,7 @@ def get_eval_metric_values(events, task_name=None):
       else:
         _, task_name_from_tag, metric_name = tag.split("/")
       eval_task_name = task_name if task_name else task_name_from_tag
-      eval_values["{}/{}".format(eval_task_name, metric_name)] = event_values
+      eval_values[f"{eval_task_name}/{metric_name}"] = event_values
   return eval_values
 
 
@@ -225,9 +225,8 @@ def metric_group_max(df, metric_names=None):
     group_to_metrics[metric.group].add(metric.name)
   group_df = pd.DataFrame()
   for group, metrics in group_to_metrics.items():
-    if not all(m in df for m in metrics):
-      continue
-    group_df[group] = df[metrics].mean(axis=1)
+    if all(m in df for m in metrics):
+      group_df[group] = df[metrics].mean(axis=1)
   # Need to replace nan with large negative value for idxmax
   group_max_step = group_df.fillna(-1e9).idxmax(axis=0)
   metric_max = pd.Series()

@@ -26,4 +26,4 @@ class BaseMetricsTest(absltest.TestCase):
       try:
         self.assertAlmostEqual(a[k], b[k], delta=delta, places=places)
       except AssertionError as e:
-        raise AssertionError(str(e) + " for key '%s'" % k)
+        raise AssertionError(f"{str(e)} for key '{k}'")

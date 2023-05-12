@@ -82,7 +82,7 @@ def main(_):
 
   if (FLAGS.operation == "average_last_n" and
       len(FLAGS.model_dirs_or_checkpoints) > 1):
-    raise ValueError("Need only 1 directory for %s operation" % FLAGS.operation)
+    raise ValueError(f"Need only 1 directory for {FLAGS.operation} operation")
 
   checkpoints = []
 
@@ -102,8 +102,7 @@ def main(_):
         checkpoints.append(checkpoint_state.all_model_checkpoint_paths[-1])
     else:
       if FLAGS.operation == "average_last_n":
-        raise ValueError("need a directory while running %s operation" %
-                         FLAGS.operation)
+        raise ValueError(f"need a directory while running {FLAGS.operation} operation")
       checkpoints.append(path)
 
   logging.info("Using checkpoints %s", checkpoints)
@@ -114,7 +113,7 @@ def main(_):
   else:
     if len(checkpoints) != 1:
       raise ValueError(
-          "operation %s requires exactly one checkpoint" % FLAGS.operation)
+          f"operation {FLAGS.operation} requires exactly one checkpoint")
 
   var_values = {}
   var_dtypes = {}
@@ -134,9 +133,8 @@ def main(_):
         tensor = reader.get_tensor(name)
         var_dtypes[name] = tensor.dtype
         var_values[name] = [tensor]
-        if not FLAGS.global_step:
-          if name == "global_step":
-            FLAGS.global_step = tensor
+        if not FLAGS.global_step and name == "global_step":
+          FLAGS.global_step = tensor
 
     logging.info("Read from checkpoint %s", checkpoint)
 
@@ -151,12 +149,12 @@ def main(_):
       new_val = np.stack(tensors)
     elif FLAGS.operation == "autoensemble":
       new_val = np.stack([tensor] * FLAGS.autoensemble_size)
-    elif FLAGS.operation == "average" or FLAGS.operation == "average_last_n":
+    elif FLAGS.operation in ["average", "average_last_n"]:
       new_val = average_tensors(tensors)
     elif FLAGS.operation == "extract_first":
       new_val = tensor[0]
     else:
-      raise ValueError("unknown FLAGS.operation=%s" % FLAGS.operation)
+      raise ValueError(f"unknown FLAGS.operation={FLAGS.operation}")
     new_var_values[name] = new_val
 
   var_values = new_var_values
@@ -171,7 +169,7 @@ def main(_):
   assign_ops = [tf.assign(v, p) for (v, p) in zip(tf_vars, placeholders)]
   saver = tf.train.Saver(tf.all_variables())
 
-  output_file = "model.ckpt-" + str(FLAGS.global_step)
+  output_file = f"model.ckpt-{str(FLAGS.global_step)}"
   output_path = os.path.join(FLAGS.output_dir, output_file)
 
   # Build a model consisting only of variables, set them to the average values.

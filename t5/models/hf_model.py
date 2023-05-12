@@ -117,8 +117,7 @@ def tokens_to_batches(dataset,
   """
 
   if mixture_or_task:
-    eos_keys = set(
-        k for k, f in mixture_or_task.output_features.items() if f.add_eos)
+    eos_keys = {k for k, f in mixture_or_task.output_features.items() if f.add_eos}
   else:
     eos_keys = True
 
@@ -134,7 +133,7 @@ def tokens_to_batches(dataset,
     for key in output_features:
       tensor = ex[key]
       mask = tf.cast(tf.greater(tensor, 0), tensor.dtype)
-      ex[key + "_mask"] = mask
+      ex[f"{key}_mask"] = mask
     return ex
 
   dataset = dataset.map(
@@ -260,7 +259,7 @@ class HfPyTorchModel(T5Model):
     if not checkpoint_files:
       return
     step_regex = re.compile(".*" + CHECKPOINT_FILE_FORMAT.format(r"(\d+)"))
-    steps = [int(step_regex.match(path).group(1)) for path in checkpoint_files]
+    steps = [int(step_regex.match(path)[1]) for path in checkpoint_files]
     return sorted(steps)
 
   def get_latest_checkpoint_step(self, model_dir=None):

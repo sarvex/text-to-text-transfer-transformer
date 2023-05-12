@@ -381,7 +381,7 @@ class MtfModel(T5Model):
       checkpoint_step = pretrained_checkpoint_step
     _parse_operative_config(pretrained_model_dir)
 
-    model_ckpt = "model.ckpt-" + str(checkpoint_step)
+    model_ckpt = f"model.ckpt-{str(checkpoint_step)}"
     self.train(mixture_or_task_name, checkpoint_step + finetune_steps,
                init_checkpoint=os.path.join(pretrained_model_dir, model_ckpt),
                split=split)
@@ -485,25 +485,24 @@ class MtfModel(T5Model):
     score_postprocess_fn = functools.partial(
         mtf_utils.save_scores, scores_filename=scores_file)
 
-    if mixture_or_task_name:
-      score_dataset_fn = functools.partial(
-          mesh_transformer.mesh_eval_dataset_fn,
-          mixture_or_task_name=mixture_or_task_name,
-      )
-      return mtf_utils.score_from_dataset(
-          estimator=estimator, vocabulary=vocabulary,
-          batch_size=self.batch_size, sequence_length=self._sequence_length,
-          model_dir=self._model_dir, eval_checkpoint_step=checkpoint_steps,
-          dataset_split=mixture_or_task_split,
-          score_dataset_fn=score_dataset_fn,
-          score_postprocess_fn=score_postprocess_fn)
-    else:
+    if not mixture_or_task_name:
       return mtf_utils.score_from_strings(
           estimator=estimator, vocabulary=vocabulary,
           model_type=self._model_type, batch_size=self.batch_size,
           sequence_length=self._sequence_length, model_dir=self._model_dir,
           eval_checkpoint_step=checkpoint_steps, inputs=inputs, targets=targets,
           score_postprocess_fn=score_postprocess_fn)
+    score_dataset_fn = functools.partial(
+        mesh_transformer.mesh_eval_dataset_fn,
+        mixture_or_task_name=mixture_or_task_name,
+    )
+    return mtf_utils.score_from_dataset(
+        estimator=estimator, vocabulary=vocabulary,
+        batch_size=self.batch_size, sequence_length=self._sequence_length,
+        model_dir=self._model_dir, eval_checkpoint_step=checkpoint_steps,
+        dataset_split=mixture_or_task_split,
+        score_dataset_fn=score_dataset_fn,
+        score_postprocess_fn=score_postprocess_fn)
 
   def export(self, export_dir=None, checkpoint_step=-1, beam_size=1,
              temperature=1.0, keep_top_k=-1, vocabulary=None,
@@ -539,7 +538,7 @@ class MtfModel(T5Model):
 
     if vocabulary is None:
       vocabulary = utils.get_vocabulary()
-    model_ckpt = "model.ckpt-" + str(checkpoint_step)
+    model_ckpt = f"model.ckpt-{str(checkpoint_step)}"
     export_dir = export_dir or self._model_dir
     estimator = self.estimator(
         vocabulary, disable_tpu=True, score_in_predict_mode=eval_with_score)

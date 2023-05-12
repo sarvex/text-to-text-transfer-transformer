@@ -158,7 +158,7 @@ def main(_):
     command_filename = os.path.join(command_dir, "command")
     while tf.io.gfile.exists(command_filename):
       suffix += 1
-      command_filename = os.path.join(command_dir, "command.{}".format(suffix))
+      command_filename = os.path.join(command_dir, f"command.{suffix}")
     with tf.io.gfile.GFile(command_filename, "w") as f:
       f.write(" ".join(sys.argv))
   except (tf.errors.PermissionDeniedError, tf.errors.InvalidArgumentError):
@@ -214,9 +214,9 @@ def main(_):
                  summary_dir=FLAGS.eval_summary_dir,
                  split=FLAGS.eval_split)
     elif FLAGS.mode == "finetune":
-      if not (FLAGS.checkpoint_mode == "latest" or
-              (FLAGS.checkpoint_mode == "specific" and
-               len(FLAGS.checkpoint_steps) == 1)):
+      if FLAGS.checkpoint_mode != "latest" and (
+          FLAGS.checkpoint_mode != "specific"
+          or len(FLAGS.checkpoint_steps) != 1):
         raise ValueError(
             "Must specify a single checkpoint for finetuning a model.")
 
@@ -243,9 +243,9 @@ def main(_):
           scores_file=FLAGS.output_file,
           checkpoint_steps=checkpoint_steps)
     elif FLAGS.mode in ("export_predict", "export_score"):
-      if not (FLAGS.checkpoint_mode == "latest" or
-              (FLAGS.checkpoint_mode == "specific" and
-               len(FLAGS.checkpoint_steps) == 1)):
+      if FLAGS.checkpoint_mode != "latest" and (
+          FLAGS.checkpoint_mode != "specific"
+          or len(FLAGS.checkpoint_steps) != 1):
         raise ValueError(
             "Must specify a single checkpoint for exporting a model.")
 

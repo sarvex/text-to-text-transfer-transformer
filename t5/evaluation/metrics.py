@@ -50,7 +50,7 @@ def bleu(targets, predictions):
     bleu_score across all targets and predictions
   """
   if isinstance(targets[0], list):
-    targets = [[x for x in target] for target in targets]
+    targets = [list(target) for target in targets]
   else:
     # Need to wrap targets in another list for corpus_bleu.
     targets = [targets]
@@ -341,7 +341,7 @@ def sklearn_metrics_wrapper(metric_str,
     the function that calculates the metric in a dict.
   """
   if not hasattr(sklearn.metrics, metric_str):
-    raise ValueError("sklearn.metrics does not have: %s" % metric_str)
+    raise ValueError(f"sklearn.metrics does not have: {metric_str}")
 
   def fn(targets, predictions):
     metric_fn = getattr(sklearn.metrics, metric_str)
@@ -349,6 +349,7 @@ def sklearn_metrics_wrapper(metric_str,
     if metric_post_process_fn is not None:
       metric_val = metric_post_process_fn(metric_val)
     return {metric_dict_str or metric_str: metric_val}
+
   return fn
 
 
@@ -443,6 +444,7 @@ def rank_classification(
     b = x.max(-1)[:, np.newaxis]
     y = np.exp(x - b)
     return y / y.sum(-1)[:, np.newaxis]
+
   probs = exp_normalize(log_likelihoods)
 
   metrics = {
@@ -458,11 +460,8 @@ def rank_classification(
                                                   predictions_indicator))
     logging.warning("AUC-pr and AUC-roc are not supported when num_classes > 2")
   else:
-    metrics.update({
-        "f1":
-            100 * sklearn.metrics.f1_score(
-                labels_indicator.argmax(-1), predictions, sample_weight=weights)
-    })
+    metrics["f1"] = 100 * sklearn.metrics.f1_score(
+        labels_indicator.argmax(-1), predictions, sample_weight=weights)
     labels_indicator = labels_indicator[:, 1]
     probs = probs[:, 1]
 
@@ -523,8 +522,7 @@ def _sequence_f1(target_tokens: Sequence[str],
 
   precision = 1.0 * sum_common / len(prediction_tokens)
   recall = 1.0 * sum_common / len(target_tokens)
-  f1 = (2 * precision * recall) / (precision + recall)
-  return f1
+  return (2 * precision * recall) / (precision + recall)
 
 
 def coqa_f1(

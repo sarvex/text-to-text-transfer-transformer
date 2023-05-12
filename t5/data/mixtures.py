@@ -167,7 +167,7 @@ for task_name in _finetune_tasks:
     # Use de-duping since we have GLUE and SuperGLUE
     tasks = [(t, _dedupe(t)) for t in task_names]
 
-  MixtureRegistry.add("leave_one_out_{}".format(task_name), tasks)
+  MixtureRegistry.add(f"leave_one_out_{task_name}", tasks)
 
 # ================= Pre-train on supervised tasks ==============================
 

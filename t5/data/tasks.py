@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Add Tasks to registry."""
+
 # TODO(adarob): Switch to seqio.Task.
 
 import functools
@@ -143,10 +144,11 @@ TaskRegistry.add(
 # =================================== GLUE =====================================
 for b in tfds.text.glue.Glue.builder_configs.values():
   TaskRegistry.add(
-      "glue_%s_v002" % b.name,
+      f"glue_{b.name}_v002",
       source=seqio.TfdsDataSource(
-          tfds_name="glue/%s:1.0.0" % b.name,
-          splits=["test"] if b.name == "ax" else None),
+          tfds_name=f"glue/{b.name}:1.0.0",
+          splits=["test"] if b.name == "ax" else None,
+      ),
       preprocessors=[
           get_glue_text_preprocessor(b),
           seqio.preprocessors.tokenize,
@@ -155,7 +157,8 @@ for b in tfds.text.glue.Glue.builder_configs.values():
       ],
       metric_fns=get_glue_metric(b.name),
       output_features=DEFAULT_OUTPUT_FEATURES,
-      postprocess_fn=get_glue_postprocess_fn(b))
+      postprocess_fn=get_glue_postprocess_fn(b),
+  )
 
 # =============================== CNN DailyMail ================================
 TaskRegistry.add(
@@ -190,9 +193,9 @@ b_configs = [
 
 for prefix, b, tfds_version in b_configs:
   TaskRegistry.add(
-      "wmt%s_%s%s_v003" % (prefix, b.language_pair[1], b.language_pair[0]),
-      source=seqio.TfdsDataSource(tfds_name="wmt%s_translate/%s:%s" %
-                                  (prefix, b.name, tfds_version)),
+      f"wmt{prefix}_{b.language_pair[1]}{b.language_pair[0]}_v003",
+      source=seqio.TfdsDataSource(
+          tfds_name=f"wmt{prefix}_translate/{b.name}:{tfds_version}"),
       preprocessors=[
           functools.partial(
               preprocessors.translate,
@@ -204,7 +207,8 @@ for prefix, b, tfds_version in b_configs:
           seqio.preprocessors.append_eos_after_trim,
       ],
       metric_fns=[metrics.bleu],
-      output_features=DEFAULT_OUTPUT_FEATURES)
+      output_features=DEFAULT_OUTPUT_FEATURES,
+  )
 
 # Special case for t2t ende.
 b = tfds.translate.wmt_t2t.WmtT2tTranslate.builder_configs["de-en"]
@@ -251,14 +255,16 @@ for b in tfds.text.super_glue.SuperGlue.builder_configs.values():
         seqio.preprocessors.append_eos_after_trim,
     ]
   TaskRegistry.add(
-      "super_glue_%s_v102" % b.name,
+      f"super_glue_{b.name}_v102",
       source=seqio.TfdsDataSource(
-          tfds_name="super_glue/%s:1.0.2" % b.name,
-          splits=["test"] if b.name in ["axb", "axg"] else None),
+          tfds_name=f"super_glue/{b.name}:1.0.2",
+          splits=["test"] if b.name in ["axb", "axg"] else None,
+      ),
       preprocessors=glue_preprocessors,
       metric_fns=get_super_glue_metric(b.name),
       output_features=DEFAULT_OUTPUT_FEATURES,
-      postprocess_fn=get_glue_postprocess_fn(b))
+      postprocess_fn=get_glue_postprocess_fn(b),
+  )
 
 
 # ======================== Definite Pronoun Resolution =========================

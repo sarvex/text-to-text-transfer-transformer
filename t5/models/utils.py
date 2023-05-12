@@ -70,8 +70,8 @@ def get_step_from_checkpoint_path(checkpoint_path):
   """
   match = re.match(r".*model\.ckpt\-(\d+).*", checkpoint_path)
   if match is None:
-    raise ValueError("Invalid checkpoint path {}".format(checkpoint_path))
-  return int(match.group(1))
+    raise ValueError(f"Invalid checkpoint path {checkpoint_path}")
+  return int(match[1])
 
 
 def write_targets_and_examples(summary_dir, targets, datasets):
@@ -86,10 +86,7 @@ def write_targets_and_examples(summary_dir, targets, datasets):
     raise ValueError("Targets and datasets must have the same tasks.")
 
   for task in targets.keys():
-    targets_filename = os.path.join(
-        summary_dir,
-        "{}_targets".format(task),
-    )
+    targets_filename = os.path.join(summary_dir, f"{task}_targets")
     write_lines_to_file(targets[task], targets_filename)
 
     inputs = []
@@ -99,9 +96,7 @@ def write_targets_and_examples(summary_dir, targets, datasets):
       else:
         inputs.append(ex["inputs"])
 
-    inputs_filename = os.path.join(
-        summary_dir,
-        "{}_inputs".format(task))
+    inputs_filename = os.path.join(summary_dir, f"{task}_inputs")
 
     write_lines_to_file(inputs, inputs_filename)
 
@@ -119,17 +114,16 @@ def get_vocabulary(mixture_or_task_name=None):
     features = provider.output_features
     if "inputs" in features and "targets" in features:
       return (features["inputs"].vocabulary, features["targets"].vocabulary)
-    else:
-      feature_values = list(features.values())
-      vocabulary = feature_values[0].vocabulary
-      for feature in feature_values[1:]:
-        if feature.vocabulary != vocabulary:
-          logging.warning("No feature_name was provided to get_vocabulary, but "
-                          "output_features have different vocabularies.")
-          vocabulary = None
-          break
-      if vocabulary:
-        return vocabulary
+    feature_values = list(features.values())
+    vocabulary = feature_values[0].vocabulary
+    for feature in feature_values[1:]:
+      if feature.vocabulary != vocabulary:
+        logging.warning("No feature_name was provided to get_vocabulary, but "
+                        "output_features have different vocabularies.")
+        vocabulary = None
+        break
+    if vocabulary:
+      return vocabulary
   logging.warning("Using default vocabulary.")
   return t5.data.get_default_vocabulary()
 
@@ -148,7 +142,7 @@ def get_latest_checkpoint_from_dir(model_dir):
   """
   ckpt = tf.train.latest_checkpoint(model_dir)
   if ckpt is None:
-    raise ValueError("No checkpoints found in model directory: %s" % model_dir)
+    raise ValueError(f"No checkpoints found in model directory: {model_dir}")
   return int(re.sub(".*ckpt-", "", ckpt))
 
 
@@ -351,9 +345,8 @@ def run_eval(
       del outputs[:dataset_size]
 
       if summary_dir:
-        predictions_filename = os.path.join(
-            summary_dir,
-            "{}_{}_predictions".format(task.name, step))
+        predictions_filename = os.path.join(summary_dir,
+                                            f"{task.name}_{step}_predictions")
         write_lines_to_file(predictions, predictions_filename)
 
       with tf.Graph().as_default():
@@ -367,7 +360,7 @@ def run_eval(
           targets = cached_targets[task.name]
           metric_result = metric_fn(targets, predictions)
           for metric_name, metric_value in metric_result.items():
-            tag = "eval/{}/{}".format(task.name, metric_name)
+            tag = f"eval/{task.name}/{metric_name}"
             logging.info("%s at step %d: %.3f", tag, step, metric_value)
             if summary_dir:
               summary.value.add(tag=tag, simple_value=metric_value)
@@ -380,5 +373,4 @@ def run_eval(
       expected_pad = -sum(len(t)
                           for t in cached_targets.values()) % batch_size
       if outputs and len(outputs) != expected_pad:
-        raise ValueError("{} padded outputs, {} expected.".format(
-            len(outputs), expected_pad))
+        raise ValueError(f"{len(outputs)} padded outputs, {expected_pad} expected.")

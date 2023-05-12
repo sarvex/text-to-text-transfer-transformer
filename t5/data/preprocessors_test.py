@@ -45,9 +45,9 @@ class PreprocessorsTest(tf.test.TestCase):
     self.assertEqual(self.evaluate(num_masked), length * noise_density)
 
   def test_random_prefix_noise_mask(self):
+    length = 10
+    noise_density = 0.5
     for _ in range(100):
-      length = 10
-      noise_density = 0.5
       noise_mask = prep.random_prefix_noise_mask(
           length=length,
           noise_density=noise_density,
@@ -191,7 +191,7 @@ class PreprocessorsTest(tf.test.TestCase):
     )
 
   def assertStringEqual(self, a, b):
-    self.assertTrue(tf.equal(a, b), '%s != %s' % (a, b))
+    self.assertTrue(tf.equal(a, b), f'{a} != {b}')
 
   def test_pad_punctuation(self):
     self.assertStringEqual(
@@ -544,13 +544,11 @@ class PreprocessorsTest(tf.test.TestCase):
 
   def test_random_split_text(self):
     num_tries = 10
-    original = '%s' % list(range(100))
+    original = f'{list(range(100))}'
     dataset = tf.data.Dataset.from_tensor_slices(
         {'text': [original] * num_tries})
     dataset = prep.random_split_text(dataset)
-    out = []
-    for data in test_utils.dataset_as_text(dataset):
-      out.append(data['text'])
+    out = [data['text'] for data in test_utils.dataset_as_text(dataset)]
     reconstructed = ' '.join(out)
     ref = ' '.join([original] * num_tries)
     self.assertEqual(reconstructed, ref)
@@ -1040,7 +1038,7 @@ class PreprocessorsTest(tf.test.TestCase):
         self.assertLen(data['inputs'], 5)
         truncated_inputs = vocab.decode(data['inputs'].tolist())
         new_targets = vocab.decode(data['targets'].tolist())
-        self.assertRegex(truncated_inputs, '.*' + targets + '.*')
+        self.assertRegex(truncated_inputs, f'.*{targets}.*')
         self.assertEqual(targets, new_targets)
 
   def test_triviaqa_truncate(self):
@@ -1090,7 +1088,7 @@ class PreprocessorsTest(tf.test.TestCase):
     )
 
     i = 0
-    for data in test_utils.dataset_as_text(dataset):
+    for _ in test_utils.dataset_as_text(dataset):
       i = i + 1
 
     self.assertEqual(i, 0)
@@ -1472,7 +1470,7 @@ class PreprocessorsTest(tf.test.TestCase):
     ]
 
     input_ds = tf.data.Dataset.from_generator(
-        lambda: (x for x in input_examples),
+        lambda: iter(input_examples),
         output_types={
             'premise': tf.string,
             'question': tf.string,
@@ -1486,7 +1484,8 @@ class PreprocessorsTest(tf.test.TestCase):
             'choice1': [],
             'choice2': [],
             'label': [],
-        })
+        },
+    )
 
     # all options
     dataset = prep.rank_classification_formatter(
@@ -1719,7 +1718,7 @@ class PreprocessorsTest(tf.test.TestCase):
     ]
 
     input_ds = tf.data.Dataset.from_generator(
-        lambda: (x for x in input_examples),
+        lambda: iter(input_examples),
         output_types={
             'premise': tf.string,
             'question': tf.string,
@@ -1735,7 +1734,8 @@ class PreprocessorsTest(tf.test.TestCase):
             'choice2': [],
             'label': [],
             'weight': [],
-        })
+        },
+    )
 
     # all options
     dataset = prep.rank_classification_formatter(

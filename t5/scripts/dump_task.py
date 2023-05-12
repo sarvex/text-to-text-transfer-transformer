@@ -67,10 +67,7 @@ def sequence_length(value=512):
   Returns:
     a dictionary
   """
-  if isinstance(value, int):
-    return {"inputs": value, "targets": value}
-  else:
-    return value
+  return {"inputs": value, "targets": value} if isinstance(value, int) else value
 
 
 def import_modules(modules):

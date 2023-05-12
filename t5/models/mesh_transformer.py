@@ -92,8 +92,7 @@ def mesh_train_dataset_fn(
   ds = ds.map(
       _filter_features, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-  eos_keys = set(
-      k for k, f in mixture_or_task.output_features.items() if f.add_eos)
+  eos_keys = {k for k, f in mixture_or_task.output_features.items() if f.add_eos}
   ds = transformer_dataset.pack_or_pad(
       ds, sequence_length, pack=pack,
       feature_keys=feature_keys, ensure_eos=eos_keys)
@@ -173,8 +172,7 @@ def mesh_inference_dataset_fn(
           "Setting a priming sequence length only makes sense for decoder-only "
           "Tasks, which have `targets` but no `inputs`.")
 
-    eos_keys = set(
-        k for k, f in mixture_or_task.output_features.items() if f.add_eos)
+    eos_keys = {k for k, f in mixture_or_task.output_features.items() if f.add_eos}
 
     logging.info(
         "Padding '%s' with sequence lengths: %s", task.name, sequence_length)
@@ -269,8 +267,7 @@ def mesh_eval_dataset_fn(
         sequence_length, split=dataset_split,
         use_cached=use_cached, shuffle=shuffle_eval_examples, seed=seed,
     )
-    eos_keys = set(
-        k for k, f in mixture_or_task.output_features.items() if f.add_eos)
+    eos_keys = {k for k, f in mixture_or_task.output_features.items() if f.add_eos}
     if sequence_length is None:
       logging.info(
           "Skipping packing/padding for '%s' since sequence length is None.",

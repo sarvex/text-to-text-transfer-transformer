@@ -69,8 +69,8 @@ def translate(x, source_language, target_language):
       source_language: babel.Locale(source_language[:2]).english_name,
       target_language: babel.Locale(target_language[:2]).english_name,
   }
-  src_str = 'translate {}'.format(lang_id_to_string[source_language])
-  tgt_str = ' to {}: '.format(lang_id_to_string[target_language])
+  src_str = f'translate {lang_id_to_string[source_language]}'
+  tgt_str = f' to {lang_id_to_string[target_language]}: '
   return {
       'inputs': tf.strings.join([src_str, tgt_str, x[source_language]]),
       'targets': x[target_language],
@@ -142,7 +142,7 @@ def pad_nonspaced_languages(x, text_key='text'):
   text = res[text_key]
   # Add spaces around any character from a non-spaced language.
   pattern = ''.join(NON_SPACED_LANGUAGE_RANGES)
-  text = tf.strings.regex_replace(text, u'([{}])'.format(pattern), r' \1 ')
+  text = tf.strings.regex_replace(text, f'([{pattern}])', r' \1 ')
   # Collapse consecutive whitespace into one space.
   text = tf.strings.regex_replace(text, r'\s+', ' ')
   res[text_key] = text
@@ -640,7 +640,7 @@ def fill_in_the_blank_sized(
         dtype=tf.dtypes.int32,
         seed=seeds[1])
 
-    pre_blank = tf.strings.reduce_join(words[0:blank_start], separator=' ')
+    pre_blank = tf.strings.reduce_join(words[:blank_start], separator=' ')
     post_blank = tf.strings.reduce_join(
         words[blank_start+blank_size:], separator=' ')
     blank = tf.strings.format('_{}_', bin_)
@@ -653,6 +653,7 @@ def fill_in_the_blank_sized(
     return {
         'inputs': tf.strings.strip(input_),
         'targets': tf.strings.strip(target)}
+
   dataset = split_text_to_words(dataset, text_key, min_num_words=2)
   # Filter out examples with fewer words than the minimum.
   dataset = dataset.filter(lambda x: tf.size(x['words']) >= bins[0])
@@ -777,8 +778,7 @@ def glue(x, benchmark_name, label_names, feature_names=None, id_key='idx'):
   # Pack keys (formatted as " key: ") and corresponding text feature
   strs_to_join = []
   for key in feature_keys:
-    strs_to_join.append('{}:'.format(key))
-    strs_to_join.append(x[key])
+    strs_to_join.extend((f'{key}:', x[key]))
   # Add benchmark name at the start
   strs_to_join.insert(0, benchmark_name)
   label_name = tf.cond(
@@ -801,10 +801,8 @@ def glue(x, benchmark_name, label_names, feature_names=None, id_key='idx'):
     ex['idx/paragraph'] = x['idx']['paragraph']
     ex['idx/question'] = x['idx']['question']
     ex['idx/answer'] = x['idx']['answer']
-  else:
-    # Store the data index in the returned example (used by eval)
-    if id_key:
-      ex['idx'] = x[id_key]
+  elif id_key:
+    ex['idx'] = x[id_key]
 
   ex['inputs'] = joined
   ex['targets'] = label_name
@@ -1417,7 +1415,7 @@ def wnli_simple(x, label='wsc:'):
         m = re.search(' '.join(pre_match + [r'(.+)$']), ' '.join(hypothesis))
 
       if m:
-        candidate = m.group(1)
+        candidate = m[1]
 
     return PronounMatch(
         score=score, index_in_premise=index, candidate=candidate)
@@ -1473,7 +1471,7 @@ def wnli_simple(x, label='wsc:'):
           'Unable to find candidate "{}" in hypothesis "{}".'.format(
               candidate, hypothesis))
 
-    candidate = m.group(1)
+    candidate = m[1]
     if candidate and candidate[-1] in ['.', ',', '!', '?']:
       candidate = candidate[:-1]
     return make_nonpossessive(candidate)
@@ -1836,10 +1834,7 @@ def preprocess_tsv(line,
   """
   def _format_part(part, field_values):
     found = re.findall(r'{(\d)}', part)
-    if found:
-      return field_values[int(found[0])]
-    else:
-      return part
+    return field_values[int(found[0])] if found else part
 
   def _format(format_string, field_values):
     parts = [_format_part(p, field_values)
@@ -2797,9 +2792,7 @@ def sentinel_id(vocabulary, return_value=None):
   Returns:
     an integer
   """
-  if return_value is not None:
-    return return_value
-  return vocabulary.vocab_size - 1
+  return return_value if return_value is not None else vocabulary.vocab_size - 1
 
 
 @gin.configurable()

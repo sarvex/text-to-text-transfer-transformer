@@ -107,7 +107,7 @@ def main(_):
     rows = collections.defaultdict(lambda: collections.defaultdict(dict))
     predictions = [int(p["value"]) for p in predictions]
     for p, e in zip(predictions, examples):
-      e = {k: int(e["idx/" + k]) for k in ["paragraph", "question", "answer"]}
+      e = {k: int(e[f"idx/{k}"]) for k in ["paragraph", "question", "answer"]}
       rows[e["paragraph"]][e["question"]][e["answer"]] = p
     with tf.io.gfile.GFile(out_file.format(extension="jsonl"), "w") as f:
       for pidx, passage in rows.items():
@@ -122,14 +122,7 @@ def main(_):
 
   if len(predictions) != len(examples):
     raise ValueError(
-        "Number of predictions in {} ({}) != of examples in {} split of {} "
-        "({}).".format(
-            FLAGS.predictions_file,
-            len(predictions),
-            FLAGS.split,
-            FLAGS.task,
-            len(examples),
-        )
+        f"Number of predictions in {FLAGS.predictions_file} ({len(predictions)}) != of examples in {FLAGS.split} split of {FLAGS.task} ({len(examples)})."
     )
 
   if "record" in FLAGS.task:
